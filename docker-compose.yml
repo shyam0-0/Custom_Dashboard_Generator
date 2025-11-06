@@ -1,0 +1,42 @@
+version: '3.7'
+
+services:
+  # 1. PROMETHEUS SERVER
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus_server
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml 
+      - prometheus-data:/prometheus 
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: always
+
+  # 2. GRAFANA SERVER
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_server
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./Grafana/Provisioning/data sources:/etc/grafana/provisioning/datasources
+ 
+      - ./Grafana/Provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      
+     
+      - ./Grafana/Dashboards:/etc/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Default user/pass is admin/admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+    restart: always
+    depends_on:
+      - prometheus
+
+# Define volumes for persistence
+volumes:
+  prometheus-data:
+  grafana-storage:

@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: 'Custom Windows Dashboard'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      # Note: This path points to the mounted dashboards directory
+      path: /etc/grafana/dashboards
