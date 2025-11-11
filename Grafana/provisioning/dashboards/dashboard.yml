@@ -9,4 +9,4 @@ providers:
     editable: true
     options:
       # Note: This path points to the mounted dashboards directory
-      path: /etc/grafana/dashboards
+      path: /var/lib/grafana/dashboards
