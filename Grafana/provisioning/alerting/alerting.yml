@@ -2,21 +2,25 @@ apiVersion: 1
 
 groups:
   - orgId: 1
-    name: "default"
+    name: "SystemAlerts"
     folder: "Default"
-    interval: 30s      # check every 30 seconds instead of 1m
+    interval: 30s
+
     rules:
+
+      # ---------------------------------------------------------------------
+      # 1. High CPU Usage
+      # ---------------------------------------------------------------------
       - uid: cpu_usage_high
         title: "High CPU Usage"
         condition: "C"
         data:
           - refId: A
             relativeTimeRange:
-              from: 600
+              from: 300
               to: 0
             datasourceUid: Prometheus
             model:
-              # Uses the '1 - idle' form for accurate % CPU usage
               expr: (1 - avg(rate(windows_cpu_time_total{mode="idle"}[5m]))) * 100
               legendFormat: "CPU Usage (%)"
               interval: ""
@@ -38,14 +42,208 @@ groups:
               conditions:
                 - evaluator:
                     type: gt
-                    params: [20]     # Threshold: trigger if CPU > 15%
+                    params: [80]   # Trigger if CPU > 80%
                   operator:
                     type: and
                   reducer:
                     type: last
                   type: query
 
-        #  More responsive testing (triggers if >15% for 30s)
-        for: 30s
+        for: 1m
         noDataState: OK
         execErrState: Error
+        annotations:
+          summary: "CPU usage above 80%"
+          description: "CPU usage has exceeded 80% for more than 1 minute."
+
+      # ---------------------------------------------------------------------
+      # 2. High Memory Usage
+      # ---------------------------------------------------------------------
+      - uid: memory_usage_high
+        title: "High Memory Usage"
+        condition: "C"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              expr: 100 * (1 - (windows_memory_available_bytes / windows_memory_physical_total_bytes))
+              legendFormat: "Memory Usage (%)"
+              interval: ""
+              refId: A
+
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              expression: A
+              type: reduce
+              reducer: last
+              refId: B
+
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
+              type: threshold
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [85]   # Trigger if >85% usage
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+                  type: query
+
+        for: 1m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Memory usage above 85%"
+          description: "Physical memory usage exceeded 85% for more than 1 minute."
+
+      # ---------------------------------------------------------------------
+      # 3. High Disk Usage
+      # ---------------------------------------------------------------------
+      - uid: disk_usage_high
+        title: "High Disk Usage"
+        condition: "C"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              expr: 100 - (avg(windows_logical_disk_free_bytes{volume="C:"}) / avg(windows_logical_disk_size_bytes{volume="C:"})) * 100
+              legendFormat: "Disk Usage (%)"
+              interval: ""
+              refId: A
+
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              expression: A
+              type: reduce
+              reducer: last
+              refId: B
+
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
+              type: threshold
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [90]
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+                  type: query
+
+        for: 1m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Disk usage above 90%"
+          description: "Drive C: has less than 10% free space remaining."
+
+      # ---------------------------------------------------------------------
+      # 4. High Network Utilization
+      # ---------------------------------------------------------------------
+      - uid: network_usage_high
+        title: "High Network Utilization"
+        condition: "C"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              expr: avg(rate(windows_net_bytes_total[5m])) / 1000000
+              legendFormat: "Network Throughput (MB/s)"
+              interval: ""
+              refId: A
+
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              expression: A
+              type: reduce
+              reducer: last
+              refId: B
+
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
+              type: threshold
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [100]
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+                  type: query
+
+        for: 1m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "High Network Traffic"
+          description: "Average network throughput exceeded 100 MB/s for more than 1 minute."
+
+      # ---------------------------------------------------------------------
+      # 5. High System Load
+      # ---------------------------------------------------------------------
+      - uid: system_load_high
+        title: "High System Load"
+        condition: "C"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              expr: avg(windows_system_processor_queue_length)
+              legendFormat: "Processor Queue Length"
+              interval: ""
+              refId: A
+
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              expression: A
+              type: reduce
+              reducer: last
+              refId: B
+
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
+              type: threshold
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [5]
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+                  type: query
+
+        for: 1m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "High System Load"
+          description: "Processor queue length exceeded threshold for more than 1 minute."
