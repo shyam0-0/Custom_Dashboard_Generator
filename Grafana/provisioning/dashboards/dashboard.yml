@@ -8,5 +8,4 @@ providers:
     disableDeletion: false
     editable: true
     options:
-      # Note: This path points to the mounted dashboards directory
-      path: /var/lib/grafana/dashboards
+      path: /etc/grafana/provisioning/dashboards

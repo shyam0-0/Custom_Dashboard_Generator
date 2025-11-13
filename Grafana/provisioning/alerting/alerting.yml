@@ -1,0 +1,51 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: "default"
+    folder: "Default"
+    interval: 30s      # check every 30 seconds instead of 1m
+    rules:
+      - uid: cpu_usage_high
+        title: "High CPU Usage"
+        condition: "C"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              # Uses the '1 - idle' form for accurate % CPU usage
+              expr: (1 - avg(rate(windows_cpu_time_total{mode="idle"}[5m]))) * 100
+              legendFormat: "CPU Usage (%)"
+              interval: ""
+              refId: A
+
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              expression: A
+              type: reduce
+              reducer: last
+              refId: B
+
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
+              type: threshold
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [20]     # Threshold: trigger if CPU > 15%
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+                  type: query
+
+        #  More responsive testing (triggers if >15% for 30s)
+        for: 30s
+        noDataState: OK
+        execErrState: Error

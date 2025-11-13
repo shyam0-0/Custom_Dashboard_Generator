@@ -1,66 +1,49 @@
 version: '3.7'
 
 services:
-  # 1. PROMETHEUS SERVER
-  # The monitoring backend that collects and stores metrics.
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus_server
     ports:
       - "9090:9090"
     volumes:
-      # Maps your local Prometheus.yml file into the container's config path
       - ./Prometheus/Prometheus.yml:/etc/prometheus/prometheus.yml
-      # Volume for persistent storage of metrics data
       - prometheus-data:/prometheus
     command:
-      # Command to start Prometheus with the specified config file and storage path
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.external-url=http://localhost:9090'
       - '--web.listen-address=0.0.0.0:9090'
     restart: always
 
-  # 2. GRAFANA SERVER
-  # The visualization and alerting platform.
   grafana:
     image: grafana/grafana:latest
     container_name: grafana_server
     ports:
-      # Maps container port 3000 to host port 3001 to avoid conflicts
       - "3001:3000"
     volumes:
-      # Volume for persistent storage of Grafana data (database, user settings, etc.)
+      # persistent DB
       - grafana-storage:/var/lib/grafana
-      # Volume mapping for provisioning data sources and alerts
-      - ./grafana/provisioning:/etc/grafana/provisioning
-      # Volume mapping for dashboard provisioning
-      - ./Grafana/Dashboards:/var/lib/grafana/dashboards
+      # unified provisioning directory (datasource + alerting + dashboards)
+      - ./Grafana/provisioning:/etc/grafana/provisioning
     environment:
-      # --- Basic Configuration ---
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_INSTALL_PLUGINS=grafana-clock-panel
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
 
-      # --- EMAIL ALERTING CONFIG (using STARTTLS) ---
+      # optional: email alerting config
       - GF_SMTP_ENABLED=true
+      - GF_SMTP_USER=${GF_SMTP_USER}
+      - GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD}
+      - GF_SMTP_FROM_ADDRESS=${GF_SMTP_FROM_ADDRESS}
+      - GF_SMTP_FROM_NAME=${GF_SMTP_FROM_NAME}
       - GF_SMTP_HOST=smtp.gmail.com:587
-      - GF_SMTP_USER=sudeeshkumarkm21@gmail.com
-      - GF_SMTP_PASSWORD=bhjgiqddicqljazl
-      - GF_SMTP_FROM_ADDRESS=sudeeshkumarkm21@gmail.com
-      - GF_SMTP_FROM_NAME=Grafana Dashboard Alert
-      
-      # Correct configuration for STARTTLS
-      - GF_SMTP_SECURE_CONNECTION=starttls 
-      - GF_SMTP_SKIP_VERIFY=true 
-    
-    restart: always
+      - GF_SMTP_SECURE_CONNECTION=starttls
+      - GF_SMTP_SKIP_VERIFY=true
+    restart: unless-stopped
     depends_on:
-      # Ensures Prometheus starts before Grafana
       - prometheus
 
-# Define volumes for persistent data storage
 volumes:
-  # Stores Prometheus metrics data, ensuring it survives container restarts
   prometheus-data: {}
-  # Stores Grafana database and configurations, ensuring persistence
   grafana-storage: {}

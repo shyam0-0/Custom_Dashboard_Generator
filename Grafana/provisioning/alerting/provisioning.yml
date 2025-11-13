@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: 'Default Alert Rules'
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/alerting
