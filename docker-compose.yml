@@ -43,6 +43,24 @@ services:
     restart: unless-stopped
     depends_on:
       - prometheus
+  predictor:
+    build: ./predictor
+    container_name: predictor
+    restart: always
+    depends_on:
+      - prometheus
+      - pushgateway
+    environment:
+      PROMETHEUS_URL: "http://prometheus:9090"
+      PUSHGATEWAY_URL: "http://pushgateway:9091"
+      PREDICTOR_JOB: "disk_predictor_test"
+
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: pushgateway
+    ports:
+      - "9091:9091"
+    restart: always 
 
 volumes:
   prometheus-data: {}
