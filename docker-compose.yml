@@ -22,16 +22,16 @@ services:
     ports:
       - "3001:3000"
     volumes:
-      # persistent DB
+      
       - grafana-storage:/var/lib/grafana
-      # unified provisioning directory (datasource + alerting + dashboards)
+      #provisioning directory 
       - ./Grafana/provisioning:/etc/grafana/provisioning
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_INSTALL_PLUGINS=grafana-clock-panel
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
 
-      # optional: email alerting config
+      # email alerting config
       - GF_SMTP_ENABLED=true
       - GF_SMTP_USER=${GF_SMTP_USER}
       - GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD}

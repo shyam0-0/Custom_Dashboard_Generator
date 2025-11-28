@@ -1,4 +1,4 @@
-# Extended predictor: disk + cpu + memory (Prophet)
+#  predictor: disk + cpu + memory (Prophet)
 import os, time, logging, schedule
 from datetime import datetime, timedelta, timezone
 import pandas as pd
@@ -28,7 +28,7 @@ for attempt in range(max_retries):
         logger.warning(f"Connection attempt {attempt+1}/{max_retries} failed: {e}")
         time.sleep(5)
 
-# registry & gauges (one gauge per predicted metric)
+# registry & gauges
 registry = CollectorRegistry()
 g_disk = Gauge('disk_percentage_predicted_in_15_min', 'Predicted disk usage % in next 15 minutes.', registry=registry)
 g_cpu = Gauge('cpu_percentage_predicted_in_15_min', 'Predicted cpu usage % in next 15 minutes.', registry=registry)
@@ -93,7 +93,7 @@ def run_predictions():
     except Exception as e:
         logger.exception(f"Failed to push to Pushgateway: {e}")
 
-# schedule
+
 schedule.every(2).minutes.do(run_predictions)
 run_predictions()
 while True:
